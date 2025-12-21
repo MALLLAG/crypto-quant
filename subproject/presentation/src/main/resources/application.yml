@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: crypto-quant
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/cryptoquant
+    username: postgres
+    password: postgres
+  webflux:
+    base-path: /
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.cryptoquant: DEBUG
