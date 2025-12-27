@@ -5,6 +5,10 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+ext {
+    set("kotlin.version", property("kotlinVersion"))
+}
+
 dependencyManagement {
     imports {
         mavenBom("org.springframework.boot:spring-boot-dependencies:${property("springBootVersion")}")

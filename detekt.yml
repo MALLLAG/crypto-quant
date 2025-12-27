@@ -1,0 +1,30 @@
+complexity:
+  active: false
+
+comments:
+  active: false
+
+coroutines:
+  active: false
+
+empty-blocks:
+  active: false
+
+exceptions:
+  active: false
+
+naming:
+  active: false
+
+performance:
+  active: false
+
+potential-bugs:
+  active: false
+
+style:
+  active: false
+
+ArrowRuleSet:
+  NoEffectScopeBindableValueAsStatement:
+    active: true

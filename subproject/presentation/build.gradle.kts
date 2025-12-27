@@ -5,6 +5,10 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+ext {
+    set("kotlin.version", property("kotlinVersion"))
+}
+
 dependencies {
     // Application module
     implementation(project(":subproject:application"))
