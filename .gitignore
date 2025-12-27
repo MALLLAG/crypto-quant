@@ -16,6 +16,7 @@ build/
 *.jar
 *.war
 *.ear
+.kotlin/
 
 # OS
 .DS_Store
