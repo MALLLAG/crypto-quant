@@ -1,6 +1,6 @@
 package com.cryptoquant.presentation
 
-import arrow.core.right
+import arrow.core.raise.effect
 import com.cryptoquant.application.MockResult
 import com.cryptoquant.application.MockUseCase
 import com.ninjasquad.springmockk.MockkBean
@@ -21,7 +21,7 @@ class MockControllerTest(
 
         context("POST /api/mock") {
             it("유효한 요청이면 200 OK를 반환한다") {
-                coEvery { mockUseCase.execute(any()) } returns MockResult(BigDecimal("100")).right()
+                coEvery { mockUseCase.execute(any()) } returns effect { MockResult(BigDecimal("100")) }
 
                 webTestClient.post()
                     .uri("/api/mock")
