@@ -1,10 +1,15 @@
 package com.cryptoquant.presentation
 
+import arrow.core.raise.toEither
 import com.cryptoquant.application.MockCommand
 import com.cryptoquant.application.MockUseCase
 import com.cryptoquant.application.MockUseCaseError
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 
 /**
@@ -20,9 +25,10 @@ class MockController(
     @PostMapping
     suspend fun execute(@RequestBody request: MockRequest): ResponseEntity<*> {
         return mockUseCase.execute(MockCommand(request.value))
+            .toEither()
             .fold(
-                ifLeft = { error -> ResponseEntity.badRequest().body(error.toResponse()) },
-                ifRight = { result -> ResponseEntity.ok(MockResponse(result.value)) }
+                { error -> ResponseEntity.badRequest().body(error.toResponse()) },
+                { result -> ResponseEntity.ok(MockResponse(result.value)) }
             )
     }
 

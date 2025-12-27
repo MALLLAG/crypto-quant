@@ -1,6 +1,7 @@
 package com.cryptoquant.domain
 
-import arrow.core.raise.either
+import arrow.core.raise.effect
+import arrow.core.raise.toEither
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -12,7 +13,7 @@ class MockDomainValueTest : DescribeSpec({
 
         context("유효한 값으로 생성할 때") {
             it("성공적으로 생성된다") {
-                val result = MockDomainValue.create(BigDecimal("100"))
+                val result = MockDomainValue.create(BigDecimal("100")).toEither()
 
                 result.isRight() shouldBe true
                 result.getOrNull()?.value shouldBe BigDecimal("100")
@@ -21,7 +22,7 @@ class MockDomainValueTest : DescribeSpec({
 
         context("0 이하의 값으로 생성할 때") {
             it("InvalidValue 에러를 반환한다") {
-                val result = MockDomainValue.create(BigDecimal.ZERO)
+                val result = MockDomainValue.create(BigDecimal.ZERO).toEither()
 
                 result.isLeft() shouldBe true
                 result.leftOrNull().shouldBeInstanceOf<MockDomainError.InvalidValue>()
@@ -30,10 +31,13 @@ class MockDomainValueTest : DescribeSpec({
 
         context("double 함수 호출 시") {
             it("값이 2배가 된다") {
-                val value = MockDomainValue.create(BigDecimal("50")).getOrNull()!!
-                val doubled = value.double()
+                val result = effect {
+                    val value = MockDomainValue.create(BigDecimal("50")).bind()
+                    double(value)
+                }.toEither()
 
-                doubled.value shouldBe BigDecimal("100")
+                result.isRight() shouldBe true
+                result.getOrNull()?.value shouldBe BigDecimal("100")
             }
         }
     }

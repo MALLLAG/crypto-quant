@@ -1,8 +1,8 @@
 package com.cryptoquant.domain
 
-import arrow.core.Either
+import arrow.core.raise.Effect
 import arrow.core.raise.Raise
-import arrow.core.raise.either
+import arrow.core.raise.effect
 import arrow.core.raise.ensure
 import java.math.BigDecimal
 
@@ -18,7 +18,7 @@ value class MockDomainValue private constructor(val value: BigDecimal) {
             return MockDomainValue(value)
         }
 
-        fun create(value: BigDecimal): Either<MockDomainError, MockDomainValue> = either {
+        fun create(value: BigDecimal): Effect<MockDomainError, MockDomainValue> = effect {
             invoke(value)
         }
     }
@@ -31,5 +31,5 @@ sealed interface MockDomainError {
 /**
  * 순수 함수 예시 - 도메인 로직
  */
-fun MockDomainValue.double(): MockDomainValue =
-    MockDomainValue.create(this.value * BigDecimal("2")).getOrNull()!!
+fun Raise<MockDomainError>.double(value: MockDomainValue): MockDomainValue =
+    with(MockDomainValue) { invoke(value.value * BigDecimal("2")) }

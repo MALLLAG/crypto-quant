@@ -1,5 +1,6 @@
 package com.cryptoquant.infrastructure
 
+import arrow.core.raise.toEither
 import com.cryptoquant.domain.MockDomainValue
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -16,7 +17,7 @@ class MockRepositoryImplTest : DescribeSpec({
 
         context("save 호출 시") {
             it("값을 저장한다") {
-                val value = MockDomainValue.create(BigDecimal("100")).getOrNull()!!
+                val value = MockDomainValue.create(BigDecimal("100")).toEither().getOrNull()!!
 
                 repository.save(value)
 
