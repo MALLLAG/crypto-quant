@@ -2,7 +2,6 @@
 
 > **작성일**: YYYY-MM-DD
 > **작성자**: [작성자]
-> **상태**: Draft | Review | Approved | Implemented
 
 ---
 
@@ -301,7 +300,7 @@ data class ExampleEntity(
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
-    fun toDomain(): Either<MappingError, Example> = either {
+    suspend fun toDomain(): Effect<MappingError, Example> = effect {
         Example(
             id = ExampleId(id),
             name = ExampleName(name),
@@ -444,14 +443,14 @@ sealed interface ErrorHandler {
 ```kotlin
 class ExampleIdTest {
     @Test
-    fun `유효한 ID로 생성 성공`() {
-        val result = either { ExampleId("valid-id") }
+    fun `유효한 ID로 생성 성공`() = runTest {
+        val result = effect { ExampleId("valid-id") }.toEither()
         result.shouldBeRight()
     }
 
     @Test
-    fun `빈 문자열로 생성 시 실패`() {
-        val result = either { ExampleId("") }
+    fun `빈 문자열로 생성 시 실패`() = runTest {
+        val result = effect { ExampleId("") }.toEither()
         result.shouldBeLeft(InvalidExampleId("ID는 비어있을 수 없습니다"))
     }
 }
@@ -494,9 +493,3 @@ class ExampleIdTest {
 - [ ] API 계약이 명확하게 정의되었는가?
 - [ ] 테스트 전략이 수립되었는가?
 - [ ] 위험 요소와 완화 방안이 문서화되었는가?
-
-### 리뷰 완료 확인
-
-- [ ] 도메인 전문가 리뷰
-- [ ] 기술 리뷰
-- [ ] 보안 리뷰 (필요 시)
