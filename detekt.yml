@@ -5,13 +5,13 @@ comments:
   active: false
 
 coroutines:
-  active: false
+  active: true
 
 empty-blocks:
   active: false
 
 exceptions:
-  active: false
+  active: true
 
 naming:
   active: false
@@ -20,11 +20,7 @@ performance:
   active: false
 
 potential-bugs:
-  active: false
+  active: true
 
 style:
   active: false
-
-ArrowRuleSet:
-  NoEffectScopeBindableValueAsStatement:
-    active: true
