@@ -1,9 +1,10 @@
 package com.cryptoquant.domain
 
 import arrow.core.raise.context.either
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
 import java.math.BigDecimal
 
 class MockDomainValueTest : DescribeSpec({
@@ -14,8 +15,7 @@ class MockDomainValueTest : DescribeSpec({
             it("성공적으로 생성된다") {
                 val result = either { MockDomainValue(BigDecimal("100")) }
 
-                result.isRight() shouldBe true
-                result.getOrNull()?.value shouldBe BigDecimal("100")
+                result.shouldBeRight().value shouldBe BigDecimal("100")
             }
         }
 
@@ -23,8 +23,7 @@ class MockDomainValueTest : DescribeSpec({
             it("InvalidValue 에러를 반환한다") {
                 val result = either { MockDomainValue(BigDecimal.ZERO) }
 
-                result.isLeft() shouldBe true
-                result.leftOrNull().shouldBeInstanceOf<MockDomainError.InvalidValue>()
+                result.shouldBeLeft() shouldBe MockDomainError.InvalidValue("값은 0보다 커야 합니다")
             }
         }
 
@@ -35,8 +34,7 @@ class MockDomainValueTest : DescribeSpec({
                     double(value)
                 }
 
-                result.isRight() shouldBe true
-                result.getOrNull()?.value shouldBe BigDecimal("100")
+                result.shouldBeRight().value shouldBe BigDecimal("100")
             }
         }
     }

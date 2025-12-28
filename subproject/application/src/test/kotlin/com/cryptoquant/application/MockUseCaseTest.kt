@@ -1,7 +1,10 @@
 package com.cryptoquant.application
 
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.math.BigDecimal
@@ -18,9 +21,7 @@ class MockUseCaseTest : DescribeSpec({
 
                 val result = useCase.execute(command)
 
-                result.isRight() shouldBe true
-                result.getOrNull()?.value shouldBe BigDecimal("100")
-
+                result.shouldBeRight().value shouldBe BigDecimal("100")
                 coVerify { mockRepository.save(any()) }
             }
         }
@@ -31,7 +32,7 @@ class MockUseCaseTest : DescribeSpec({
 
                 val result = useCase.execute(command)
 
-                result.isLeft() shouldBe true
+                result.shouldBeLeft().shouldBeInstanceOf<MockUseCaseError.DomainError>()
             }
         }
     }
