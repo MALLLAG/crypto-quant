@@ -1,8 +1,8 @@
 package com.cryptoquant.application
 
-import arrow.core.raise.Effect
-import arrow.core.raise.effect
-import arrow.core.raise.withError
+import arrow.core.Either
+import arrow.core.raise.context.either
+import arrow.core.raise.context.withError
 import com.cryptoquant.domain.MockDomainError
 import com.cryptoquant.domain.MockDomainValue
 import com.cryptoquant.domain.double
@@ -15,12 +15,16 @@ import java.math.BigDecimal
 class MockUseCase(
     private val repository: MockRepository,
 ) {
-    suspend fun execute(command: MockCommand): Effect<MockUseCaseError, MockResult> = effect {
-        val domainValue = withError({ MockUseCaseError.DomainError(it) }) {
-            MockDomainValue.create(command.value).bind()
+    suspend fun execute(command: MockCommand): Either<MockUseCaseError, MockResult> = either {
+        val domainValue = withError(
+            { MockUseCaseError.DomainError(it) },
+        ) {
+            MockDomainValue(command.value)
         }
 
-        val doubled = withError({ MockUseCaseError.DomainError(it) }) {
+        val doubled = withError(
+            { MockUseCaseError.DomainError(it) },
+        ) {
             double(domainValue)
         }
 

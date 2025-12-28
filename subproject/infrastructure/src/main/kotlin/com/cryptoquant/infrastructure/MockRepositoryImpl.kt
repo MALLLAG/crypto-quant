@@ -1,6 +1,6 @@
 package com.cryptoquant.infrastructure
 
-import arrow.core.raise.toEither
+import arrow.core.raise.context.either
 import com.cryptoquant.application.MockRepository
 import com.cryptoquant.domain.MockDomainValue
 import org.springframework.r2dbc.core.DatabaseClient
@@ -24,7 +24,7 @@ class MockRepositoryImpl(
     }
 
     override suspend fun findById(id: String): MockDomainValue? {
-        return inMemoryStore[id]?.let { MockDomainValue.create(it).toEither().getOrNull() }
+        return inMemoryStore[id]?.let { either { MockDomainValue(it) }.getOrNull() }
     }
 }
 

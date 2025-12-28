@@ -1,9 +1,7 @@
 package com.cryptoquant.domain
 
-import arrow.core.raise.Effect
 import arrow.core.raise.Raise
-import arrow.core.raise.effect
-import arrow.core.raise.ensure
+import arrow.core.raise.context.ensure
 import java.math.BigDecimal
 
 /**
@@ -13,13 +11,10 @@ import java.math.BigDecimal
 @JvmInline
 value class MockDomainValue private constructor(val value: BigDecimal) {
     companion object {
-        fun Raise<MockDomainError>.invoke(value: BigDecimal): MockDomainValue {
+        context(_: Raise<MockDomainError>)
+        operator fun invoke(value: BigDecimal): MockDomainValue {
             ensure(value > BigDecimal.ZERO) { MockDomainError.InvalidValue("값은 0보다 커야 합니다") }
             return MockDomainValue(value)
-        }
-
-        fun create(value: BigDecimal): Effect<MockDomainError, MockDomainValue> = effect {
-            invoke(value)
         }
     }
 }
@@ -31,5 +26,6 @@ sealed interface MockDomainError {
 /**
  * 순수 함수 예시 - 도메인 로직
  */
-fun Raise<MockDomainError>.double(value: MockDomainValue): MockDomainValue =
-    with(MockDomainValue) { invoke(value.value * BigDecimal("2")) }
+context(_: Raise<MockDomainError>)
+fun double(value: MockDomainValue): MockDomainValue =
+    MockDomainValue(value.value * BigDecimal("2"))

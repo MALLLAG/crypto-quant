@@ -1,6 +1,5 @@
 package com.cryptoquant.application
 
-import arrow.core.raise.toEither
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coVerify
@@ -17,7 +16,7 @@ class MockUseCaseTest : DescribeSpec({
             it("도메인 로직을 실행하고 결과를 저장한다") {
                 val command = MockCommand(BigDecimal("50"))
 
-                val result = useCase.execute(command).toEither()
+                val result = useCase.execute(command)
 
                 result.isRight() shouldBe true
                 result.getOrNull()?.value shouldBe BigDecimal("100")
@@ -30,7 +29,7 @@ class MockUseCaseTest : DescribeSpec({
             it("도메인 에러를 반환한다") {
                 val command = MockCommand(BigDecimal("-10"))
 
-                val result = useCase.execute(command).toEither()
+                val result = useCase.execute(command)
 
                 result.isLeft() shouldBe true
             }

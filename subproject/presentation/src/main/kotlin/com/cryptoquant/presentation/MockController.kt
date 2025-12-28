@@ -1,6 +1,5 @@
 package com.cryptoquant.presentation
 
-import arrow.core.raise.toEither
 import com.cryptoquant.application.MockCommand
 import com.cryptoquant.application.MockUseCase
 import com.cryptoquant.application.MockUseCaseError
@@ -25,7 +24,6 @@ class MockController(
     @PostMapping
     suspend fun execute(@RequestBody request: MockRequest): ResponseEntity<*> {
         return mockUseCase.execute(MockCommand(request.value))
-            .toEither()
             .fold(
                 { error -> ResponseEntity.badRequest().body(error.toResponse()) },
                 { result -> ResponseEntity.ok(MockResponse(result.value)) }
