@@ -300,7 +300,7 @@ data class ExampleEntity(
     val createdAt: Instant,
     val updatedAt: Instant,
 ) {
-    suspend fun toDomain(): Effect<MappingError, Example> = effect {
+    suspend fun toDomain(): Either<MappingError, Example> = either {
         Example(
             id = ExampleId(id),
             name = ExampleName(name),
@@ -444,13 +444,13 @@ sealed interface ErrorHandler {
 class ExampleIdTest {
     @Test
     fun `유효한 ID로 생성 성공`() = runTest {
-        val result = effect { ExampleId("valid-id") }.toEither()
+        val result = either { ExampleId("valid-id") }
         result.shouldBeRight()
     }
 
     @Test
     fun `빈 문자열로 생성 시 실패`() = runTest {
-        val result = effect { ExampleId("") }.toEither()
+        val result = either { ExampleId("") }
         result.shouldBeLeft(InvalidExampleId("ID는 비어있을 수 없습니다"))
     }
 }

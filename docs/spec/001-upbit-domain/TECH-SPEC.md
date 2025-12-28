@@ -1096,7 +1096,7 @@ interface StrategyExecutionRepository {
 
 | 항목 | 선택 | 대안 | 선택 이유 |
 |------|------|------|-----------|
-| FP 라이브러리 | Arrow | kotlin-result, Λrrow 2.0 | Raise DSL의 명시적 오류 처리, 컨텍스트 수신자 지원 |
+| FP 라이브러리 | Arrow 2.2.x | kotlin-result, Arrow 1.x | Raise DSL + Context Parameters API로 명시적 오류 처리, `either` + `bind()` 스타일 지원 |
 | HTTP 클라이언트 | WebClient | Ktor Client, OkHttp | Spring WebFlux와 자연스러운 통합, 리액티브 스트림 지원 |
 | WebSocket | Spring WebSocket | Ktor WebSocket | Spring 생태계 일관성 유지 |
 | JSON 직렬화 | kotlinx.serialization | Jackson, Gson | Kotlin 친화적, 컴파일 타임 안전성 |
@@ -1124,12 +1124,13 @@ interface StrategyExecutionRepository {
 
 **컨텍스트**: 오류 처리 방식 선택 필요 (예외, Either, Raise)
 
-**결정**: Arrow의 Raise 컨텍스트 사용
+**결정**: Arrow Raise 컨텍스트 + `either`/`bind()` 사용
 
 **이유**:
 - 함수 시그니처에 오류 가능성 명시
 - 컴파일러가 오류 처리 강제
 - Either보다 직관적인 코드 작성
+- `either` 내부에서 `bind()`로 Either 해제
 
 **결과**:
 - 장점: 명시적 오류 처리, 누락 방지

@@ -4,8 +4,8 @@
 Crypto Quant는 함수형 도메인 주도 설계(Functional DDD) 원칙을 기반으로 한 가상자산 자동매매 프로그램입니다.
 
 ## 기술 스택
-- **Language**: Kotlin
-- **FP Library**: Kotlin Arrow
+- **Language**: Kotlin 2.2.20
+- **FP Library**: Kotlin Arrow 2.2.1.1 (Context Parameters API)
 - **Web Framework**: Spring WebFlux (Reactive)
 - **Database**: PostgreSQL with R2DBC
 
@@ -132,14 +132,14 @@ suspend fun UnvalidatedOrder.placeOrder(
     checkSymbol: CheckSymbolExists,
     getPrice: GetCurrentPrice,
     executeOrder: ExecuteOrder,
-): Effect<PlaceOrderError, List<OrderEvent>> = effect {
+): Either<PlaceOrderError, List<OrderEvent>> = either {
     val validated = this@placeOrder.validateOrder(checkSymbol, getPrice).bind()
     val executed = validated.executeOrder(exchangeClient).bind()
     executed.createOrderEvents()
 }
 ```
 
-### 4. Effect로 오류 효과 명시
+### 4. Either/Raise로 오류 효과 명시
 
 함수가 실패할 수 있음을 타입 시그니처에 명시적으로 드러냅니다.
 
@@ -151,8 +151,8 @@ sealed interface PlaceOrderError {
     data class ExchangeError(val code: String, val message: String) : PlaceOrderError
 }
 
-// Effect를 반환하는 함수
-suspend fun placeOrder(order: UnvalidatedOrder): Effect<PlaceOrderError, ExecutedOrder>
+// Either를 반환하는 함수
+suspend fun placeOrder(order: UnvalidatedOrder): Either<PlaceOrderError, ExecutedOrder>
 
 // Raise 컨텍스트 사용 (권장)
 context(_: Raise<PlaceOrderError>)
@@ -274,8 +274,8 @@ package com.cryptoquant.infrastructure.exchange
 class BinanceExchangeGateway(
     private val webClient: WebClient,
 ) : ExchangeGateway {
-    override suspend fun execute(order: ValidatedOrder): Effect<ExchangeError, ExecutedOrder> =
-        effect {
+    override suspend fun execute(order: ValidatedOrder): Either<ExchangeError, ExecutedOrder> =
+        either {
             val response = webClient.post()
                 .uri("/api/v3/order")
                 .bodyValue(order.toRequest())
@@ -304,7 +304,7 @@ class OrderController(
 ) {
     @PostMapping
     suspend fun placeOrder(@RequestBody request: PlaceOrderRequest): ResponseEntity<*> =
-        effect {
+        either {
             val command = request.toCommand()
             placeOrderUseCase.execute(command)
         }.fold(
@@ -318,9 +318,19 @@ class OrderController(
 
 ## 코딩 컨벤션
 
-### Arrow 사용 패턴
+### Arrow 사용 패턴 (Context Parameters API)
+
+이 프로젝트는 Arrow 2.2의 Context Parameters 기반 API (`arrow.core.raise.context`)를 사용합니다.
 
 ```kotlin
+import arrow.core.Either
+import arrow.core.raise.Raise
+import arrow.core.raise.context.bind
+import arrow.core.raise.context.either
+import arrow.core.raise.context.ensure
+import arrow.core.raise.context.raise
+import arrow.core.raise.context.withError
+
 // Raise 컨텍스트 사용 (권장)
 context(_: Raise<DomainError>)
 fun String.toOrderId(): OrderId {
@@ -328,21 +338,22 @@ fun String.toOrderId(): OrderId {
     return OrderId(this)
 }
 
-// Effect 체이닝
-suspend fun processOrder(): Effect<Error, Result> = effect {
+// Either 빌더로 조합
+suspend fun processOrder(): Either<Error, Result> = either {
     val step1 = operation1().bind()
     val step2 = operation2(step1).bind()
     val step3 = operation3(step2).bind()
     step3
 }
 
-// 병렬 처리
-suspend fun fetchAll(): Effect<Error, Combined> = effect {
-    parZip(
-        { fetchA().bind() },
-        { fetchB().bind() },
-        { fetchC().bind() }
-    ) { a, b, c -> Combined(a, b, c) }
+// 에러 변환 (withError)
+suspend fun execute(): Either<UseCaseError, Result> = either {
+    val value = withError<UseCaseError, DomainError, Value>(
+        { UseCaseError.DomainError(it) }
+    ) {
+        domainOperation()
+    }
+    Result(value)
 }
 ```
 
@@ -363,7 +374,7 @@ suspend fun ValidatedOrder.execute(): ExecutedOrder
 // 또는 명시적 매개변수로 전달
 suspend fun ValidatedOrder.execute(
     gateway: ExchangeGateway
-): Effect<OrderError, ExecutedOrder>
+): Either<OrderError, ExecutedOrder>
 ```
 
 ---
@@ -372,7 +383,7 @@ suspend fun ValidatedOrder.execute(
 
 ### Detekt (정적 분석)
 
-Detekt는 Kotlin 코드의 정적 분석 도구입니다. 이 프로젝트에서는 기본 규칙은 비활성화하고 Arrow 전용 규칙만 사용합니다.
+Detekt는 Kotlin 코드의 정적 분석 도구입니다. 이 프로젝트에서는 Detekt 2.0 (Kotlin 2.2 호환)을 사용하며, 최소 규칙 세트를 활성화해 기본적인 오류와 코루틴 이슈를 잡습니다.
 
 #### 실행 방법
 
@@ -384,22 +395,9 @@ Detekt는 Kotlin 코드의 정적 분석 도구입니다. 이 프로젝트에서
 ./gradlew :subproject:domain:detekt
 ```
 
-#### Arrow 규칙
-
-Arrow의 Effect 시스템을 올바르게 사용하도록 검사합니다.
-
-```yaml
-# detekt.yml
-ArrowRuleSet:
-  NoEffectScopeBindableValueAsStatement:
-    active: true
-```
-
-- `NoEffectScopeBindableValueAsStatement`: Either/Raise 컨텍스트에서 bind() 호출 누락 검출
-
 ### Ktlint (코드 포맷터)
 
-Ktlint는 Kotlin 코드 린터 및 포맷터입니다. `.editorconfig`를 통해 규칙을 관리합니다.
+Ktlint는 Kotlin 코드 린터 및 포맷터입니다. `.editorconfig`를 통해 규칙을 관리하며, 핵심 규칙만 활성화해 스타일 안정성을 유지합니다.
 
 #### 실행 방법
 
@@ -413,7 +411,7 @@ Ktlint는 Kotlin 코드 린터 및 포맷터입니다. `.editorconfig`를 통해
 
 #### EditorConfig 설정
 
-프로젝트 루트의 `.editorconfig`에서 규칙을 관리합니다. 대부분의 포맷팅 규칙은 비활성화되어 있으며 기본적인 스타일만 적용됩니다.
+프로젝트 루트의 `.editorconfig`에서 규칙을 관리합니다. 핵심 규칙만 활성화되어 있으며 기본적인 스타일만 적용됩니다.
 
 ```ini
 # .editorconfig 주요 설정
@@ -433,7 +431,7 @@ insert_final_newline = true
 ```
 
 - `ktlintCheck`: 코드 스타일 검사
-- `detekt`: 정적 분석 (Arrow 규칙)
+- `detekt`: 정적 분석
 - `test`: 단위 테스트
 
 ---
@@ -447,7 +445,7 @@ insert_final_newline = true
 class OrderTest {
     @Test
     fun `수량이 0 이하면 생성에 실패한다`() = runTest {
-        val result = effect { Quantity(BigDecimal.ZERO) }.toEither()
+        val result = either<DomainError, Quantity> { Quantity(BigDecimal.ZERO) }
         result.shouldBeLeft()
     }
 
@@ -470,8 +468,8 @@ class PlaceOrderUseCaseTest {
         val mockGateway = mockk<ExchangeGateway>()
         coEvery { mockGateway.execute(any()) } returns ExecutedOrder(...).right()
 
-        val result = with(mockGateway) {
-            effect { unvalidatedOrder.placeOrder() }.toEither()
+        val result = either<PlaceOrderError, ExecutedOrder> {
+            unvalidatedOrder.placeOrder(mockGateway)
         }
 
         result.shouldBeRight()
@@ -688,7 +686,7 @@ class PlaceOrderUseCaseIntegrationTest : IntegrationTestBase() {
         ).right()
 
         // When
-        val result = effect { placeOrderUseCase.execute(command) }.toEither()
+        val result = placeOrderUseCase.execute(command)
 
         // Then
         result.shouldBeRight()
@@ -710,7 +708,7 @@ class PlaceOrderUseCaseIntegrationTest : IntegrationTestBase() {
             ExchangeError("INSUFFICIENT_BALANCE", "잔고 부족").left()
 
         // When
-        val result = effect { placeOrderUseCase.execute(command) }.toEither()
+        val result = placeOrderUseCase.execute(command)
 
         // Then
         result.shouldBeLeft()
@@ -772,7 +770,7 @@ test/
 ### 금지 사항
 - Domain 모듈에서 Spring, 데이터베이스 의존성 사용
 - 도메인 로직 내 I/O 수행
-- 예외를 오류 처리에 사용 (Effect/Raise 사용)
+- 예외를 오류 처리에 사용 (Either/Raise 사용)
 - 가변 상태 사용 (불변 데이터 구조 사용)
 - null 직접 사용 (nullable 타입 사용)
 
