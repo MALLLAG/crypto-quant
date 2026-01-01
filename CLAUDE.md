@@ -28,8 +28,15 @@ crypto-quant/
 #### 단순값은 래퍼 타입으로 모델링
 원시 타입을 직접 사용하지 말고, 도메인 의미를 담은 래퍼 타입을 생성합니다.
 
+**래퍼 타입 선택 기준:**
+
+| 필드 개수 | 사용할 타입 | 이유 |
+|-----------|-------------|------|
+| 1개 | `@JvmInline value class` | 런타임 오버헤드 없음 (힙 할당 없음) |
+| 2개 이상 | `data class` | value class는 단일 필드만 허용 |
+
 ```kotlin
-// GOOD: 도메인 개념을 명확히 표현
+// 필드 1개: value class 사용
 @JvmInline
 value class OrderId(val value: String)
 
@@ -39,9 +46,27 @@ value class Price(val value: BigDecimal)
 @JvmInline
 value class Quantity(val value: BigDecimal)
 
+// 필드 2개 이상: data class 사용
+data class Pair private constructor(
+    val market: Market,
+    val ticker: String,
+) {
+    val value: String get() = "${market.name}-$ticker"  // 파생 속성
+}
+
 // BAD: 원시 타입 직접 사용
 fun placeOrder(orderId: String, price: BigDecimal) // 타입 안정성 없음
+
+// BAD: 파생 속성에서 매번 파싱하는 value class
+@JvmInline
+value class Pair(val value: String) {
+    val market: Market get() = Market.valueOf(value.substringBefore("-"))  // 매번 파싱!
+    val ticker: String get() = value.substringAfter("-")  // 매번 파싱!
+}
 ```
+
+> **주의**: value class에서 파생 속성이 문자열 파싱 등 비용이 드는 연산을 수행하면,
+> 접근할 때마다 오버헤드가 발생합니다. 이런 경우 data class를 사용하세요.
 
 #### 스마트 생성자로 제약 조건 강제
 생성 시점에 비즈니스 규칙을 검증하여 유효하지 않은 값이 생성되지 않도록 합니다.
@@ -772,7 +797,6 @@ test/
 - 도메인 로직 내 I/O 수행
 - 예외를 오류 처리에 사용 (Either/Raise 사용)
 - 가변 상태 사용 (불변 데이터 구조 사용)
-- null 직접 사용 (nullable 타입 사용)
 
 ### 권장 사항
 - 모든 도메인 개념은 명시적 타입으로 모델링
