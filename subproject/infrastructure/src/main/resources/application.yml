@@ -1,0 +1,23 @@
+# Upbit API 설정
+upbit:
+  api:
+    base-url: https://api.upbit.com
+    access-key: ${UPBIT_ACCESS_KEY:}
+    secret-key: ${UPBIT_SECRET_KEY:}
+  websocket:
+    url: wss://api.upbit.com/websocket/v1
+    private-url: wss://api.upbit.com/websocket/v1/private
+    ping-interval: 60s
+    reconnect-delay: 5s
+    max-reconnect-attempts: 10
+
+# Spring R2DBC 설정
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:cryptoquant}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
