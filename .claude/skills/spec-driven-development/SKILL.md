@@ -1,5 +1,5 @@
 ---
-name: Spec Driven Development
+name: spec-driven-development
 description: 기능 구현을 위한 테크스펙과 구현 계획 문서를 작성합니다. 스펙 주도 개발 워크플로우를 지원합니다.
 ---
 

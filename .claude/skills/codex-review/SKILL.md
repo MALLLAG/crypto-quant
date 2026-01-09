@@ -1,5 +1,5 @@
 ---
-name: codex
+name: codex-review
 description: |
   어떤 작업사항을 리뷰할지 사용자에게 물어본 후, 코덱스를 이용하여 해당 작업사항을 리뷰합니다.
 

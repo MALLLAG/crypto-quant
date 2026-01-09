@@ -1,5 +1,5 @@
 ---
-name: Git Commit Helper
+name: git-commit-helper
 description: 현재까지의 작업을 논리적 단위별로 나눠서 커밋합니다.
 ---
 
