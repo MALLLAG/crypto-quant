@@ -31,11 +31,6 @@
 | 용어1 | 정의 | 사용 예시 |
 | 용어2 | 정의 | 사용 예시 |
 
-### 1.4 관련 문서
-- [관련 테크스펙 또는 문서 링크]
-- [외부 API 문서]
-- [참고 자료]
-
 ---
 
 ## 2. 요구사항
@@ -92,12 +87,12 @@
 │ Presentation│────▶│ Application │────▶│   Domain    │
 │   Layer     │     │    Layer    │     │   Layer     │
 └─────────────┘     └─────────────┘     └─────────────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │Infrastructure│
-                    │    Layer    │
-                    └─────────────┘
+                          │
+                          ▼
+                   ┌─────────────┐
+                   │Infrastructure│
+                   │    Layer    │
+                   └─────────────┘
 ```
 
 ### 3.2 도메인 모델
@@ -143,42 +138,7 @@ data class ExampleEntity(
 )
 ```
 
-#### 3.2.3 집합체 (Aggregates)
-
-```kotlin
-/**
- * [집합체 설명]
- *
- * 불변식 (Invariants):
- * - [불변식 1]
- * - [불변식 2]
- */
-sealed interface ExampleAggregate {
-    val id: ExampleId
-    // ...
-}
-```
-
-#### 3.2.4 도메인 이벤트 (Domain Events)
-
-```kotlin
-sealed interface ExampleEvent {
-    val occurredAt: Instant
-
-    data class ExampleCreated(
-        val id: ExampleId,
-        override val occurredAt: Instant = Instant.now(),
-    ) : ExampleEvent
-
-    data class ExampleUpdated(
-        val id: ExampleId,
-        val changes: List<String>,
-        override val occurredAt: Instant = Instant.now(),
-    ) : ExampleEvent
-}
-```
-
-#### 3.2.5 도메인 오류 (Domain Errors)
+#### 3.2.3 도메인 오류 (Domain Errors)
 
 ```kotlin
 sealed interface ExampleError {
@@ -341,115 +301,7 @@ Client          Controller       UseCase         Repository      Database
 
 ## 4. 기술적 결정사항
 
-### 4.1 기술 선택
-
 | 항목 | 선택 | 대안 | 선택 이유 |
 |------|------|------|-----------|
 | 기술1 | 옵션A | 옵션B, 옵션C | [상세한 선택 이유] |
 | 기술2 | 옵션X | 옵션Y | [상세한 선택 이유] |
-
----
-
-## 5. 엣지 케이스 및 예외 처리
-
-### 5.1 엣지 케이스
-
-| 케이스 | 상황 | 예상 동작 | 처리 방법 |
-|--------|------|-----------|-----------|
-| EC-001 | [상황 설명] | [예상 결과] | [처리 로직] |
-| EC-002 | [상황 설명] | [예상 결과] | [처리 로직] |
-| EC-003 | 빈 입력값 | 검증 오류 반환 | 스마트 생성자에서 검증 |
-| EC-004 | 중복 요청 | 멱등성 보장 | 중복 체크 후 기존 결과 반환 |
-| EC-005 | 동시 수정 | 충돌 감지 | Optimistic Locking |
-
-### 5.2 오류 처리 전략
-
-```kotlin
-// 오류 타입별 처리 전략
-sealed interface ErrorHandler {
-
-    // 재시도 가능한 오류
-    object Retryable : ErrorHandler {
-        val maxRetries = 3
-        val backoffMs = listOf(100, 500, 2000)
-    }
-
-    // 즉시 실패
-    object FailFast : ErrorHandler
-
-    // 폴백 처리
-    data class Fallback(val fallbackValue: Any) : ErrorHandler
-}
-```
-
-### 5.3 경계 조건
-
-| 항목 | 최소값 | 최대값 | 초과 시 동작 |
-|------|--------|--------|--------------|
-| 이름 길이 | 1자 | 100자 | ValidationError |
-| 목록 크기 | 0 | 1000 | 페이지네이션 |
-| 요청 크기 | - | 1MB | 413 에러 |
-
----
-
-## 6. 위험 요소 및 완화 방안
-
-| ID | 위험 요소 | 발생 확률 | 영향도 | 완화 방안 | 대응 계획 |
-|----|-----------|-----------|--------|-----------|-----------|
-| R-001 | [위험 설명] | 높음/중간/낮음 | 높음/중간/낮음 | [사전 대응] | [발생 시 대응] |
-| R-002 | 외부 API 장애 | 중간 | 높음 | Circuit Breaker 적용 | 폴백 로직 실행 |
-| R-003 | DB 성능 저하 | 낮음 | 높음 | 인덱스 최적화, 쿼리 튜닝 | 캐시 레이어 추가 |
-
----
-
-## 7. 테스트 전략
-
-### 7.1 단위 테스트
-
-#### 테스트 대상
-- 도메인 모델 (값 객체, 엔터티)
-- 스마트 생성자 검증 로직
-- 비즈니스 규칙
-
-#### 테스트 케이스 예시
-
-```kotlin
-class ExampleIdTest {
-    @Test
-    fun `유효한 ID로 생성 성공`() = runTest {
-        val result = either { ExampleId("valid-id") }
-        result.shouldBeRight()
-    }
-
-    @Test
-    fun `빈 문자열로 생성 시 실패`() = runTest {
-        val result = either { ExampleId("") }
-        result.shouldBeLeft(InvalidExampleId("ID는 비어있을 수 없습니다"))
-    }
-}
-```
-
-### 7.2 통합 테스트
-
-#### 테스트 대상
-- Repository 구현체
-- 외부 서비스 연동
-- API 엔드포인트
-
-#### 테스트 환경
-- TestContainers (PostgreSQL)
-- WireMock (외부 API 모킹)
-
-### 7.3 E2E 테스트
-
-#### 시나리오
-1. [시나리오 1: 정상 플로우]
-   - Given: [초기 조건]
-   - When: [액션]
-   - Then: [예상 결과]
-
-2. [시나리오 2: 오류 플로우]
-   - Given: [초기 조건]
-   - When: [액션]
-   - Then: [예상 결과]
-
